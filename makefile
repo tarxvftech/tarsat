@@ -1,0 +1,31 @@
+cc := gcc
+cpp := g++
+cflags = -g -Ilib/lunar/ -Ilib/sat_code/ -Ilib/maidenhead/ -Idata/tles
+cppflags = -g -Ilib/lunar/ -Ilib/sat_code/ -Ilib/maidenhead/ -Idata/tles
+ldflags = -lm 
+
+lunar_src = lib/lunar/alt_az.cpp lib/lunar/precess.cpp lib/lunar/miscell.cpp lib/lunar/obliquit.cpp lib/lunar/nutation.cpp lib/lunar/date.cpp lib/lunar/snprintf.cpp
+lunar_objs = $(patsubst %.cpp, %.o, $(lunar_src))
+sat_code_src = lib/sat_code/sgp.cpp lib/sat_code/sgp4.cpp lib/sat_code/sgp8.cpp lib/sat_code/sdp4.cpp lib/sat_code/sdp8.cpp lib/sat_code/deep.cpp lib/sat_code/basics.cpp lib/sat_code/get_el.cpp lib/sat_code/common.cpp lib/sat_code/tle_out.cpp lib/sat_code/observe.cpp
+sat_code_objs = $(patsubst %.cpp, %.o, $(sat_code_src))
+
+tarsat: main.c satellite.o  ${sat_code_objs} ${lunar_objs}
+	${cc} ${cflags} -o $@ $^ ${ldflags}
+
+	#data/tles/generated/sat_tles.c
+data/tles/generated/sat_tles.c: data/tles/nasabare.txt data/tles/process.py
+	make -C data/tles update
+	make -C data/tles run
+
+%.o: %.cpp
+	${cpp} ${cppflags} -c -o $@ $^ 
+%.o: %.c
+	${cc} ${cflags} -c -o $@ $^ 
+
+.PHONY: lunar
+lunar: ${lunar_objs}
+.PHONY: sat_code
+sat_code: ${sat_code_objs}
+
+clean:
+	-rm ${tarsat} satellite.o ${sat_code_objs} ${lunar_objs}
