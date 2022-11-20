@@ -8,9 +8,12 @@ lunar_src = lib/lunar/alt_az.cpp lib/lunar/precess.cpp lib/lunar/miscell.cpp lib
 lunar_objs = $(patsubst %.cpp, %.o, $(lunar_src))
 sat_code_src = lib/sat_code/sgp.cpp lib/sat_code/sgp4.cpp lib/sat_code/sgp8.cpp lib/sat_code/sdp4.cpp lib/sat_code/sdp8.cpp lib/sat_code/deep.cpp lib/sat_code/basics.cpp lib/sat_code/get_el.cpp lib/sat_code/common.cpp lib/sat_code/tle_out.cpp lib/sat_code/observe.cpp
 sat_code_objs = $(patsubst %.cpp, %.o, $(sat_code_src))
+maidenhead_src = lib/maidenhead/maidenhead.c
+maidenhead_objs = $(patsubst %.c, %.o, $(maidenhead_src))
 
-tarsat: main.c satellite.o  ${sat_code_objs} ${lunar_objs}
+tarsat: main.c satellite.o  ${sat_code_objs} ${lunar_objs}  ${maidenhead_objs}
 	${cc} ${cflags} -o $@ $^ ${ldflags}
+	./tarsat
 
 	#data/tles/generated/sat_tles.c
 data/tles/generated/sat_tles.c: data/tles/nasabare.txt data/tles/process.py
@@ -28,4 +31,4 @@ lunar: ${lunar_objs}
 sat_code: ${sat_code_objs}
 
 clean:
-	-rm ${tarsat} satellite.o ${sat_code_objs} ${lunar_objs}
+	-rm tarsat satellite.o ${sat_code_objs} ${lunar_objs}
