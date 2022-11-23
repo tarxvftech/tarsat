@@ -14,6 +14,7 @@ maidenhead_objs = $(patsubst %.c, %.o, $(maidenhead_src))
 .PHONY: run
 run: tarsat
 	./tarsat
+	gnuplot graphs.gnuplot  -p
 
 tarsat: main.c satellite.o  ${sat_code_objs} ${lunar_objs}  ${maidenhead_objs}
 	${cc} ${cflags} -o $@ $^ ${ldflags}
