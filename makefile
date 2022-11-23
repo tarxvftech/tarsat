@@ -11,9 +11,12 @@ sat_code_objs = $(patsubst %.cpp, %.o, $(sat_code_src))
 maidenhead_src = lib/maidenhead/maidenhead.c
 maidenhead_objs = $(patsubst %.c, %.o, $(maidenhead_src))
 
+.PHONY: run
+run: tarsat
+	./tarsat
+
 tarsat: main.c satellite.o  ${sat_code_objs} ${lunar_objs}  ${maidenhead_objs}
 	${cc} ${cflags} -o $@ $^ ${ldflags}
-	./tarsat
 
 	#data/tles/generated/sat_tles.c
 data/tles/generated/sat_tles.c: data/tles/nasabare.txt data/tles/process.py
