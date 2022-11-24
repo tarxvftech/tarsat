@@ -24,9 +24,9 @@ set style line 106 lw 2 lt rgb "#ff00ff"
 #plot 'out.csv' using 1:3 with lines ls 102 title "elev",  0 ls 104, '' using 1:(d($3)) title '1-variable derivative' ls 101
 #plot 'out.csv' using 1:3 with lines ls 102 title "elev",  0 ls 104, '' using 1:(d2($1,$3)) title '1-variable derivative' ls 101
 
-plot 'ISS.csv' using 1:3 with lines ls 102 title "elev", 0 ls 100, \
-'ISS_test.csv' using 1:3 with dots ls 106 title 'elevtest',\
-'ISS_test.csv' using 1:3 with lines ls 101 title 'elevtestl'
+#plot 'ISS.csv' using 1:3 with lines ls 102 title "elev", 0 ls 100, \
+#'ISS_test.csv' using 1:3 with dots ls 106 title 'elevtest',\
+#'ISS_test.csv' using 1:3 with lines ls 101 title 'elevtestl'
 #'ISS_test.csv' using 1:(d2($1,$3)) title 'elevtest d' ls 100
 
 #plot 'ISS.csv' using 1:3 with lines ls 101 title "ISS", 0 ls 100, \
@@ -35,3 +35,9 @@ plot 'ISS.csv' using 1:3 with lines ls 102 title "elev", 0 ls 100, \
 #'AO91.csv' using 1:3 with lines ls 104 title "AO91", \
 #'LILACSAT2.csv' using 1:3 with lines ls 105 title "LILACSAT2", \
 #'AO27.csv' using 1:3 with lines ls 106 title "AO27"
+
+
+plot '25544_groundtruth.csv' using 1:3 with lines ls 102 title "elev", \
+0 ls 100, \
+'25544_mmdev.csv' using 1:3 with dots ls 106 title 'elevtest',\
+'25544_mmdev.csv' using 1:3 with lines ls 101 title 'elevtestl'

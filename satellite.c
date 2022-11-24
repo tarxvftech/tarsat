@@ -139,7 +139,7 @@ void ra_dec_to_az_alt(double jd,
     }
 }
 
-
+extern char algo[];
 sat_pos_t  calcSat( tle_t * tle, double time_jd, topo_pos_t observer_degrees)
 {
     topo_pos_t obs = { //observer position, but in radians
@@ -218,11 +218,11 @@ sat_pos_t  calcSat( tle_t * tle, double time_jd, topo_pos_t observer_degrees)
     ret.jd = time_jd;
     ret.satid = tle->norad_number;
     ret.err = err_val;
-    /*char fn[64] = {0};*/
-    /*snprintf(fn, 64, "%s_%s.csv", algo, );*/
-    /*fd = fopen(fn,"w");*/
-    /*FILE * fd = fopen("%s_%s.csv", w);*/
-    /*fprintf(fd,"%f,%f,%f,%f,%f,%f\n", jd, current.az, current.elev, current.dist, current, current.dec);*/
+    char fn[64] = {0};
+    snprintf(fn, 64, "%d_%s.csv", ret.satid, algo);
+    FILE * fd = fopen(fn, "a");
+    fprintf(fd,"%f,%f,%f,%f,%f,%f\n", time_jd, ret.az, ret.elev, ret.dist, ret.ra, ret.dec);
+    fclose(fd);
     return ret;
 }
 
