@@ -218,6 +218,11 @@ sat_pos_t  calcSat( tle_t * tle, double time_jd, topo_pos_t observer_degrees)
     ret.jd = time_jd;
     ret.satid = tle->norad_number;
     ret.err = err_val;
+    /*char fn[64] = {0};*/
+    /*snprintf(fn, 64, "%s_%s.csv", algo, );*/
+    /*fd = fopen(fn,"w");*/
+    /*FILE * fd = fopen("%s_%s.csv", w);*/
+    /*fprintf(fd,"%f,%f,%f,%f,%f,%f\n", jd, current.az, current.elev, current.dist, current, current.dec);*/
     return ret;
 }
 
