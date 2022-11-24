@@ -251,19 +251,6 @@ sat_pos_t bisectSearchJD(
         topo_pos_t observer,
         enum BisectSearchType searchtype
         ){
-    //find zero crossings +,-, and local maxima --and-minima-- (minima not implemented)
-    //makes me wish for currying ... https://stackoverflow.com/a/66865994
-    //
-    //hard requirement: The desired feature must be between startjd and endjd, and there should be only one or you'll get unexpected answers
-    //similarly, understand that these tests are based on slope - and too long a search area will have multiple areas of similar slope 
-    //which will break the assumptions for bisect search
-    //keep your search area to less than 3/4 (or better, 1/2) "wavelength" for periodic stuff
-    //TODO helper fn should handle this correctly 
-    //
-    //Ideally you'll set startjd and endjd knowing what the orbit period is and having a rough idea of where you can expect a pass to happen 
-    // - parts of which you can figure out from the bare TLE data (mean motion) and a sample or two.
-    //https://space.stackexchange.com/a/23451
-    //TODO: finish this fn and turn nextpass into a helper function to do just that
 /*
  
         Curve measured at midpoint of values (*)
@@ -445,8 +432,8 @@ sat_pass_t sat_nextpass(
     do {
         //printf("searching ... %d\n",i);
         np.rise = bisectSearchJD( startjd, endjd, tle, observer, BISECT_RISING); 
-        startjd += 3*orbit_period_jd;
-        endjd = startjd + 3*orbit_period_jd;
+        startjd = endjd ;
+        endjd = startjd + 1*orbit_period_jd;
         i++;
     } while ( np.rise.err != 0 && i < max_orbits_search );
     if(np.rise.err != 0 || i > max_orbits_search){
@@ -461,7 +448,7 @@ sat_pass_t sat_nextpass(
         /*printf("JD: %f, azel %.0f,%.0f\n", np.rise.jd, np.rise.az, np.rise.elev);*/
         np.err = 0;
     }
-    endjd = np.rise.jd + orbit_period_jd / 4;
+    endjd = np.rise.jd + orbit_period_jd / 8;
     np.max = bisectSearchJD( np.rise.jd, endjd, tle, observer, BISECT_MAX); 
     np.set = bisectSearchJD( np.max.jd,  endjd, tle, observer, BISECT_FALLING); 
                                         
