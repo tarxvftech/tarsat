@@ -16,6 +16,7 @@ run: tarsat
 	-rm *.csv
 	./tarsat
 	gnuplot graphs.gnuplot  -p
+	grep '' 25544_*_N.csv
 
 tarsat: main.c satellite.o  ${sat_code_objs} ${lunar_objs}  ${maidenhead_objs}
 	${cc} ${cflags} -o $@ $^ ${ldflags}

@@ -51,7 +51,8 @@ int main(int argc, char **argv){
 #include "generated/sat_tles.c"
     printf("LL: %.8f\t%.8f\n", obs.lat, obs.lon);
     double start_jd = getjd();
-    float days = .15;
+    Pf(start_jd);
+    float days = .57;
     /*for( int i = 0; i < 1; i++ ){*/
     for( int i = 0; i < num_satellites; i++ ){
         double jd_inc = 10.0/86400;
@@ -94,6 +95,7 @@ int main(int argc, char **argv){
             if( slope >= 0 ){
                 jd_inc = 10.0/86400;
                 upward = true;
+                /*sat_nextpass(&satellites[i].tle, start_jd, obs);*/
             } else if( slope < 0 && upward == true){
                 //we hit the peak, now let's skip to the next peak if we can
                 jd_inc = one_orbit_jd;
@@ -106,7 +108,10 @@ int main(int argc, char **argv){
 
         }
         printf("%s: M %d, N %d, N/M %f\n", satellites[i].name, M, N, ((float)N)/M);
-        }
+        strncpy(algo, "old", 25);
+        Pf(start_jd);
+        sat_nextpass(&satellites[i].tle, start_jd, obs);
+    }
 
         return 0;
     }

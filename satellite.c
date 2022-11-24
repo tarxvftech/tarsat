@@ -223,6 +223,21 @@ sat_pos_t  calcSat( tle_t * tle, double time_jd, topo_pos_t observer_degrees)
     FILE * fd = fopen(fn, "a");
     fprintf(fd,"%f,%f,%f,%f,%f,%f\n", time_jd, ret.az, ret.elev, ret.dist, ret.ra, ret.dec);
     fclose(fd);
+    snprintf(fn, 64, "%d_%s_N.csv", ret.satid, algo);
+
+    fd = fopen(fn, "r");
+    int n = 0;
+    if( fd ){
+       fscanf(fd, "%d", &n);
+       fclose(fd);
+    } 
+
+    fd = fopen(fn, "w");
+    n += 1;
+    if( fd ){
+       fprintf(fd, "%d\n", n);
+    } 
+    fclose(fd);
     return ret;
 }
 
@@ -337,7 +352,7 @@ goRight = (lut >> key) & 1; (if(goRight){...}else{...}
     //printf("bisect search: startjd: %f, endjd:%f\n", startjd, endjd);
 
     double jd_1s = 1.0 / 86400; //1 second in decimal days
-    double precision = 10*jd_1s;
+    double precision = 1*jd_1s;
 
     double width = endjd-startjd; 
     //endjd must be beyond startjd
@@ -421,7 +436,7 @@ sat_pass_t sat_nextpass(
     //to get back to orbits per day, and then invert it to get days per orbit, like so:
     double orbit_period_jd = 1. / (1440*tle->xno/(2*PI)); 
 
-    double endjd = startjd + 3*orbit_period_jd;  
+    double endjd = startjd + 1*orbit_period_jd;  
     //orbit period does not guarantee a pass over us within that time! But if there's a pass, we only want one. 
     //To find passes we'll have to offset and search those spaces just like we will this first time
     double jd_1s = 1.0 / 86400; //1 second in decimal days
