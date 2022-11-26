@@ -52,9 +52,9 @@ int main(int argc, char **argv){
     printf("LL: %.8f\t%.8f\n", obs.lat, obs.lon);
     double start_jd = getjd();
     Pf(start_jd);
-    float days = .57;
-    /*for( int i = 0; i < 1; i++ ){*/
-    for( int i = 0; i < num_satellites; i++ ){
+    float days = 0.57;
+    for( int i = 0; i < 1; i++ ){
+    /*for( int i = 0; i < num_satellites; i++ ){*/
         double jd_inc = 10.0/86400;
         int M = 0;
         strncpy(algo, "groundtruth", 25);
@@ -91,7 +91,13 @@ int main(int argc, char **argv){
             /*direction = 1;*/
             /*direction = -1;*/
 
-
+            //bisect search to find a local maxima
+            //jump ahead by one orbit
+            //bisect search to find a local maxima
+            //jump ahead by one orbit
+            //repeat until orbit max is above horizon
+            //find and store the rise, max, and fall times
+            //go to top of loop
             if( slope >= 0 ){
                 jd_inc = 10.0/86400;
                 upward = true;
