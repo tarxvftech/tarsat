@@ -85,11 +85,6 @@ int main(int argc, char **argv){
             N+=2;
             sat_pos_t current = pos1;
             double slope = pos2.elev - pos1.elev;
-            slope *= 1000;
-            /*Pf(slope);*/
-
-            /*direction = 1;*/
-            /*direction = -1;*/
 
             //bisect search to find a local maxima
             //jump ahead by one orbit
@@ -98,6 +93,7 @@ int main(int argc, char **argv){
             //repeat until orbit max is above horizon
             //find and store the rise, max, and fall times
             //go to top of loop
+
             if( slope >= 0 ){
                 jd_inc = 10.0/86400;
                 upward = true;
@@ -116,7 +112,7 @@ int main(int argc, char **argv){
         printf("%s: M %d, N %d, N/M %f\n", satellites[i].name, M, N, ((float)N)/M);
         strncpy(algo, "old", 25);
         Pf(start_jd);
-        sat_nextpass(&satellites[i].tle, start_jd, obs);
+        /*sat_nextpass(&satellites[i].tle, start_jd, obs);*/
     }
 
         return 0;

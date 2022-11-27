@@ -12,6 +12,43 @@
 //double time_offset = 5;
 //
 
+typedef double jd_ts; //julian day timestamp
+typedef enum Direction
+{
+    BOTH  = 0, //endjd = startjd + .5 orbit; startjd -= .5 orbit
+    RIGHT = 1, //endjd = startjd + 1 orbit
+    LEFT  = 2, //endjd = startjd; startjd = startjd - 1 orbit
+} direction_t;
+
+typedef enum Feature
+{
+    FEATURE_PASS,
+    //FEATURE_VISPASS,//
+} feature_t;
+
+enum SearchType
+{
+    SEARCH_RISING = 0, //crossing zero / low to high 
+    SEARCH_FALLING,    //crossing zero \ high to low 
+    SEARCH_MAX,        //local maximum ^
+    SEARCH_MIN         //local minimum v
+};
+
+/*
+search_simple();  //where it advances ahead in the specified direction with single steps like an idiot
+bisect_find();       //where it does a straight bisection search
+bisect_orbit_find(); //where it guesses non-midpoints based on local slope or elevation
+                  
+search_brents();  //brents method?
+
+
+
+find max
+    from max elevation, we can guess where we are in the orbit because spheres and orbits
+    find passes by jumping ahead from max by one or more orbits (need to be able to go backwards
+
+
+*/
 typedef struct {
     float ra;
     float dec;
@@ -32,7 +69,7 @@ typedef struct {
 } topo_pos_t;
 
 typedef struct {
-    double jd;  //julian day/time stamp
+    jd_ts jd;  //julian day/time stamp
     //could also commit fully to j2k throughout, if i were so inclined...
     float  az;   //degrees
     float  elev; //degrees
@@ -41,7 +78,7 @@ typedef struct {
 
 typedef struct {
     //doesn't include observer because it can only be generated with data from observer, so calcSat caller keeps track of it
-    double jd;  //time of position
+    jd_ts jd;  //time of position
 
     double az;   //azimuth from observer, degrees (0/360 north, 180 south, etc
     double elev; //elevation, degrees (0 is horizon, 90 is straight up normal to the ground)
@@ -83,13 +120,6 @@ extern int num_stars;
 //DEC (Declination) is assumed to be in degrees
 //latitude and longitude are assumed to be in degrees
 //
-enum BisectSearchType
-{
-    BISECT_RISING = 0,
-    BISECT_FALLING,
-    BISECT_MAX,
-    BISECT_MIN
-};
 
 topo_pos_t getObserverPosition();
 double jd_to_j2k(double jd);
@@ -104,6 +134,7 @@ sat_pos_t  calcSatNow(tle_t * tle);
 sat_pos_t  calcSat(tle_t * tle, double time_jd, topo_pos_t observer_degrees);
 
 
+/*
 sat_pass_t sat_nextpass (
     //sat in question
     tle_t * tle,
@@ -119,7 +150,7 @@ sat_pos_t bisectSearchJD(
         topo_pos_t observer,
         enum BisectSearchType searchtype
         );
-
+*/
 
 
 //stuff for the "asteroids" "game"

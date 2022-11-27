@@ -1,7 +1,7 @@
 cc := gcc
 cpp := g++
-cflags = -g -Ilib/lunar/ -Ilib/sat_code/ -Ilib/maidenhead/ -Idata/tles
-cppflags = -g -Ilib/lunar/ -Ilib/sat_code/ -Ilib/maidenhead/ -Idata/tles
+cflags = -g -Wfatal-errors -Ilib/lunar/ -Ilib/sat_code/ -Ilib/maidenhead/ -Idata/tles
+cppflags = -g -Wfatal-errors -Ilib/lunar/ -Ilib/sat_code/ -Ilib/maidenhead/ -Idata/tles
 ldflags = -lm 
 
 lunar_src = lib/lunar/alt_az.cpp lib/lunar/precess.cpp lib/lunar/miscell.cpp lib/lunar/obliquit.cpp lib/lunar/nutation.cpp lib/lunar/date.cpp lib/lunar/snprintf.cpp
