@@ -157,16 +157,16 @@ typedef struct foundfeature {
 } foundfeature_t;
 
 foundfeature_t search_hillclimb(
-        topo_pos_t obs,
         tle_t* tle,
+        topo_pos_t obs,
 
         jd_ts stepsize,
         jd_ts startjd,
         jd_ts maxjd
         );
 foundfeature_t search_simple(
-        topo_pos_t obs,
         tle_t* tle,
+        topo_pos_t obs,
         search_t searchtype,
 
         direction_t dir,
@@ -176,8 +176,8 @@ foundfeature_t search_simple(
         );
 
 foundfeature_t bisectSearchJD(
-        topo_pos_t obs,
         tle_t* tle,
+        topo_pos_t obs,
         search_t searchtype,
         jd_ts precision,
         jd_ts startjd,

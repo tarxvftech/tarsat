@@ -19,15 +19,6 @@ void print_n2yo(tle_t tle){
 }
 
 char algo[33] = {0};
-/*printf("JD: %f\n", jd);*/
-/*for( int i = 0; i < 1; i++ ){*/
-/*int x = printf("\n%s\t", satellites[i].name );*/
-/*if( x < 8 ){*/
-/*printf("\t");*/
-/*}*/
-/*print_pos(jd, obs, current );*/
-/*printf("\t\t\t\t"); print_n2yo(satellites[i].tle);*/
-
 
 int main(int argc, char **argv){
     topo_pos_t obs = {0};

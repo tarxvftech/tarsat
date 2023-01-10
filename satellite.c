@@ -260,8 +260,8 @@ int _sat_algoN_read(int satid, char * algo){
 
 
 foundfeature_t search_hillclimb(
-        topo_pos_t obs,
         tle_t* tle,
+        topo_pos_t obs,
 
         jd_ts stepsize,
         jd_ts startjd,
@@ -270,8 +270,8 @@ foundfeature_t search_hillclimb(
     ;
 }
 foundfeature_t search_simple(
-        topo_pos_t obs,
         tle_t* tle,
+        topo_pos_t obs,
         search_t searchtype,
         direction_t dir,
 
@@ -365,8 +365,8 @@ uint32_t makelut(){
 }
 
 foundfeature_t bisectSearchJD(
-        topo_pos_t observer,
         tle_t* tle,
+        topo_pos_t observer,
         search_t searchtype,
         jd_ts precision,
 
@@ -434,8 +434,8 @@ foundfeature_t bisectSearchJD(
 
         if(goRight) {
             return bisectSearchJD(
-                    observer, 
                     tle, 
+                    observer, 
                     searchtype,
                     precision, 
                     midpoint, 
@@ -443,8 +443,8 @@ foundfeature_t bisectSearchJD(
                     );
         } else {
             return bisectSearchJD(
-                    observer, 
                     tle, 
+                    observer, 
                     searchtype,
                     precision, 
                     startjd, 
@@ -454,46 +454,11 @@ foundfeature_t bisectSearchJD(
     }
 }
 
-sat_pass_t nextpass(
-        topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
+
+
+sat_pos_t search_simple_better(
         tle_t* tle,  //sat in question
-        jd_ts startjd //start time
-        ){
-    sat_pass_t pass = {0};
-    /*pass.rise = get_orbit_local_feature( obs, tle, SEARCH_RISING,  RIGHT, startjd);*/
-    /*pass.max  = get_orbit_local_feature( obs, tle, SEARCH_PASSMAX, RIGHT, pass.rise.jd);*/
-    /*pass.set  = get_orbit_local_feature( obs, tle, SEARCH_FALLING, RIGHT, pass.max.jd);*/
-    return pass;
-}
-
-
-sat_pos_t np1(
         topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
-        tle_t* tle,  //sat in question
-        search_t featuretype, // SEARCH_RISING etc
-        direction_t dir, //search direction
-
-        jd_ts startjd //start time
-        )
-{
-    //naive search till victory. 
-    jd_ts stepsize = 30.0/86400;
-    jd_ts maxjd = startjd + 1;
-    foundfeature_t found = search_simple(
-            obs, 
-            tle,
-            featuretype,
-            dir,
-            stepsize,
-            startjd, 
-            maxjd
-            );
-    return found.pos;
-}
-
-sat_pos_t np2(
-        topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
-        tle_t* tle,  //sat in question
         search_t featuretype, // SEARCH_RISING etc
         direction_t dir, //search direction
 
@@ -506,8 +471,8 @@ sat_pos_t np2(
     double mean_motion_rpd = tle->xno * MINS_PER_DAY / (2*PI);
     jd_ts one_orbit_jd = 1/mean_motion_rpd;
     foundfeature_t found = search_simple(
-            obs, 
             tle,
+            obs, 
             SEARCH_MIN|SEARCH_MAX,
             LEFT,
             stepsize,
@@ -529,8 +494,8 @@ sat_pos_t np2(
     if( featuretype == SEARCH_PASSMAX ){
         while( 1 ){
             found = search_simple(
-                    obs, 
                     tle,
+                    obs, 
                     SEARCH_MIN|SEARCH_MAX|SEARCH_PASSMAX,
                     RIGHT,
                     stepsize,
@@ -553,8 +518,8 @@ sat_pos_t np2(
         }
     } else {
         found = search_simple(
-                obs, 
                 tle,
+                obs, 
                 featuretype,
                 RIGHT,
                 stepsize,
@@ -565,8 +530,8 @@ sat_pos_t np2(
     }
 }
 sat_pos_t np3(
-        topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
         tle_t* tle,  //sat in question
+        topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
         search_t featuretype, // SEARCH_RISING etc
         direction_t dir, //search direction
 
@@ -575,63 +540,18 @@ sat_pos_t np3(
 {
     //bisect to a max, then jump ahead and bisect to a max
 }
-sat_pos_t get_orbit_local_feature(
-        topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
+sat_pass_t nextpass(
         tle_t* tle,  //sat in question
-        search_t featuretype, // SEARCH_RISING etc
-        direction_t dir, //search direction
-
+        topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
         jd_ts startjd //start time
-        )
-{
-    if( ! (featuretype & (SEARCH_RISING|SEARCH_FALLING|SEARCH_MAX|SEARCH_MIN) ) ){
-        sat_pos_t m;
-        m.err = 1;
-        return m;
-    }
-    jd_ts days = 1;
-    jd_ts stepsize = 300.0/86400;
-    jd_ts bisect_precision = 1.0/86400;
-
-    bool found_maxes = false;
-
-    jd_ts maxjd = startjd + days;
-
-    double mean_motion_rpd = tle->xno * MINS_PER_DAY / (2*PI);
-    jd_ts one_orbit_jd = 1/mean_motion_rpd;
-
-    foundfeature_t found = search_simple(
-            obs, 
-            tle,
-            SEARCH_MIN | SEARCH_MAX | SEARCH_PASSMAX,
-            RIGHT,
-            stepsize,
-            startjd, 
-            maxjd
-            );
-    /*return found.pos;*/
-
-    jd_ts next_startjd = 0;
-    if( found.feature & SEARCH_PASSMAX ){
-        next_startjd = found.pos.jd - one_orbit_jd/2;
-    } else if( found.feature & SEARCH_MAX ){
-        next_startjd = found.pos.jd + one_orbit_jd/2;
-    } else if( found.feature & SEARCH_MIN ){
-        next_startjd = found.pos.jd; 
-    } else {
-        ;//...
-    }
-    jd_ts next_maxjd = startjd + one_orbit_jd;
-    found = bisectSearchJD(
-            obs,
-            tle,
-            SEARCH_PASSMAX | SEARCH_MAX,
-            bisect_precision,
-            next_startjd,
-            next_maxjd
-            );
-    return found.pos;
+        ){
+    sat_pass_t pass = {0};
+    /*pass.rise = get_orbit_local_feature( tle, obs, SEARCH_RISING,  RIGHT, startjd);*/
+    /*pass.max  = get_orbit_local_feature( tle, obs, SEARCH_PASSMAX, RIGHT, pass.rise.jd);*/
+    /*pass.set  = get_orbit_local_feature( tle, obs, SEARCH_FALLING, RIGHT, pass.max.jd);*/
+    return pass;
 }
+
 errorcount get_next_N_passes(tle_t tle, topo_pos_t obs, jd_ts startjd, int N, sat_pass_t * passes, nextpassfn np){
     //find and store the next N passes in the sat_pass_t array passes.
     
