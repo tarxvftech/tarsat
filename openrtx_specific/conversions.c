@@ -1,3 +1,4 @@
+sat_pos_t  calcSatNow(tle_t * tle);
 
 double curTime_to_julian_day(curTime_t t)
 {

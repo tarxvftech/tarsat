@@ -3,52 +3,18 @@
 #define SATELLITE_H
 
 #define PI  3.141592653589793238462643383279
-#define CENTURY 2000
+#define MINS_PER_DAY 1440
 #include <norad.h>
 #include <stdbool.h>
 #include <stdint.h>
-
+#include "misc.h"
 #define radial_vel_offset_sec 5  //was time_offset
-//double time_offset = 5;
-//
-
+                                 //double time_offset = 5;
+                                 //
 typedef double jd_ts; //julian day timestamp
-typedef enum Direction
-{
-    BOTH  = 0, //endjd = startjd + .5 orbit; startjd -= .5 orbit
-    RIGHT = 1, //endjd = startjd + 1 orbit
-    LEFT  = 2, //endjd = startjd; startjd = startjd - 1 orbit
-} direction_t;
+typedef int errorcode_satpass;
+typedef int errorcode_satpos;
 
-typedef enum Feature
-{
-    FEATURE_PASS,
-    //FEATURE_VISPASS,//
-} feature_t;
-
-enum SearchType
-{
-    SEARCH_RISING = 0, //crossing zero / low to high 
-    SEARCH_FALLING,    //crossing zero \ high to low 
-    SEARCH_MAX,        //local maximum ^
-    SEARCH_MIN         //local minimum v
-};
-
-/*
-search_simple();  //where it advances ahead in the specified direction with single steps like an idiot
-bisect_find();       //where it does a straight bisection search
-bisect_orbit_find(); //where it guesses non-midpoints based on local slope or elevation
-                  
-search_brents();  //brents method?
-
-
-
-find max
-    from max elevation, we can guess where we are in the orbit because spheres and orbits
-    find passes by jumping ahead from max by one or more orbits (need to be able to go backwards
-
-
-*/
 typedef struct {
     float ra;
     float dec;
@@ -70,7 +36,7 @@ typedef struct {
 
 typedef struct {
     jd_ts jd;  //julian day/time stamp
-    //could also commit fully to j2k throughout, if i were so inclined...
+               //could also commit fully to j2k throughout, if i were so inclined...
     float  az;   //degrees
     float  elev; //degrees
     float  dist; //meters
@@ -126,30 +92,29 @@ double jd_to_j2k(double jd);
 double local_sidereal_degrees(double j2k, double longitude);
 double hour_angle_degrees(double lst_deg, double ra_hrs);
 void ra_dec_to_az_alt(double jd,
-                      double latitude, double longitude,
-                      double ra_hrs, double dec_deg,
-                      double* az_out_deg, double* alt_out_deg);
+        double latitude, double longitude,
+        double ra_hrs, double dec_deg,
+        double* az_out_deg, double* alt_out_deg);
 
-sat_pos_t  calcSatNow(tle_t * tle);
-sat_pos_t  calcSat(tle_t * tle, double time_jd, topo_pos_t observer_degrees);
+sat_pos_t  calcSat(tle_t * tle, topo_pos_t observer_degrees, jd_ts time_jd);
 
 
 /*
-sat_pass_t sat_nextpass (
-    //sat in question
-    tle_t * tle,
-    //start time
-    double startjd,
-    //observer location, in degrees latitude and longitude, and altitude in meters
-    topo_pos_t observer
+   sat_pass_t sat_nextpass (
+//sat in question
+tle_t * tle,
+//start time
+double startjd,
+//observer location, in degrees latitude and longitude, and altitude in meters
+topo_pos_t observer
 ); //TODO convert to a satellite pass type
 sat_pos_t bisectSearchJD(
-        double startjd,
-        double endjd,
-        tle_t * tle,
-        topo_pos_t observer,
-        enum BisectSearchType searchtype
-        );
+double startjd,
+double endjd,
+tle_t * tle,
+topo_pos_t observer,
+enum BisectSearchType searchtype
+);
 */
 
 
@@ -170,5 +135,59 @@ void game_obj_screenwrap(game_obj_2d_t* o);
 #define RAD(x) ( (x)*PI/180 )
 #define HRS2DEG(x) ((x)*15)
 
+typedef enum Direction
+{
+    BOTH  = 0, //endjd = startjd + .5 orbit; startjd -= .5 orbit
+    RIGHT = 1, //endjd = startjd + 1 orbit
+    LEFT  = 2, //endjd = startjd; startjd = startjd - 1 orbit
+} direction_t;
+
+typedef enum SearchType
+{
+    SEARCH_FAILURE =0,      //for when returning values, indicates not found
+    SEARCH_RISING = 1,      //crossing zero / low to high 
+    SEARCH_FALLING= 1<<1,   //crossing zero \ high to low 
+    SEARCH_MAX    = 1<<2,   //local maximum ^
+    SEARCH_MIN    = 1<<3,   //local minimum v
+    SEARCH_PASSMAX= 1<<4,   //highest point above the horizon (implies a rising before and a falling after), plus passmaxes are strictly a subset of the max points
+} search_t;
+typedef struct foundfeature {
+    sat_pos_t pos; //pos has a jd in it
+    search_t feature;
+} foundfeature_t;
+
+foundfeature_t search_hillclimb(
+        topo_pos_t obs,
+        tle_t* tle,
+
+        jd_ts stepsize,
+        jd_ts startjd,
+        jd_ts maxjd
+        );
+foundfeature_t search_simple(
+        topo_pos_t obs,
+        tle_t* tle,
+        search_t searchtype,
+
+        direction_t dir,
+        jd_ts stepsize,
+        jd_ts startjd,
+        jd_ts maxjd
+        );
+
+foundfeature_t bisectSearchJD(
+        topo_pos_t obs,
+        tle_t* tle,
+        search_t searchtype,
+        jd_ts precision,
+        jd_ts startjd,
+        jd_ts maxjd
+        );
+typedef sat_pass_t(*nextpassfn)(tle_t tle, topo_pos_t obs, jd_ts startjd);
+errorcount get_next_N_passes(tle_t tle, topo_pos_t obs, jd_ts startjd, int N, sat_pass_t * passes, nextpassfn np);
+
+uint32_t makelut();
+uint32_t lutkey(search_t st, int slope, int elev);
+uint32_t lutval(int st, int slope, int elev, int dir);
 
 #endif

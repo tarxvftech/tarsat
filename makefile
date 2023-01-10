@@ -15,10 +15,13 @@ maidenhead_objs = $(patsubst %.c, %.o, $(maidenhead_src))
 run: tarsat
 	-rm *.csv
 	./tarsat
+
+.PHONY: graph
+graph: run
 	gnuplot graphs.gnuplot  -p
 	grep '' 25544_*_N.csv
 
-tarsat: main.c satellite.o  ${sat_code_objs} ${lunar_objs}  ${maidenhead_objs}
+tarsat: main.c satellite.o linux.c  sattests.c ${sat_code_objs} ${lunar_objs}  ${maidenhead_objs}
 	${cc} ${cflags} -o $@ $^ ${ldflags}
 
 	#data/tles/generated/sat_tles.c

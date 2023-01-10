@@ -224,3 +224,30 @@ sat_pass_t bad_sat_nextpass(
 }
 
 
+    /*for( int i = 0; i < num_satellites; i++ ){*/
+    for( int i = 0; i < 1; i++ ){
+        strncpy(algo, "groundtruth", 25);
+        for( jd_ts jd = startjd-.05; jd < startjd + days; jd+=5.0/86400){
+            sat_pos_t m = calcSat(&satellites[i].tle, jd, obs); //writes to file as a side effect
+        }
+        strncpy(algo, "golf", 25);
+        sat_pos_t pos = get_orbit_local_feature( obs, &satellites[i].tle, SEARCH_PASSMAX, RIGHT, startjd );
+        jd_ts sjd = startjd;
+        for( int pc = 0; pc < 10; pc++ ){
+            strncpy(algo, "np1", 25);
+            pos = np1( obs, &satellites[i].tle, SEARCH_PASSMAX, RIGHT, sjd );
+            sjd = pos.jd + 300.0/86400;
+        }
+        sjd = startjd;
+        for( int pc = 0; pc < 10; pc++ ){
+            strncpy(algo, "np2", 25);
+            pos = np2( obs, &satellites[i].tle, SEARCH_PASSMAX, RIGHT, sjd );
+            sjd = pos.jd + 300.0/86400;
+        }
+        strncpy(algo, "np3", 25);
+        pos = np3( obs, &satellites[i].tle, SEARCH_PASSMAX, RIGHT, startjd );
+
+        strncpy(algo, "nextpass", 25);
+        sat_pass_t pass = nextpass( obs, &satellites[i].tle, startjd);
+        printf("%.1f %.1f %.1f\n", pass.rise.az, pass.rise.elev, pass.rise.dist);
+    }

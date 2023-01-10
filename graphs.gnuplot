@@ -1,5 +1,7 @@
 set datafile separator ','
 
+#https://stackoverflow.com/questions/4457046/how-do-i-draw-a-set-of-vertical-lines-in-gnuplot
+
 set xlabel 'Time'
 d(y) = ($0 == 0) ? (y1 = y, 1/0) : (y2 = y1, y1 = y, y1-y2)
 d2(x,y) = ($0 == 0) ? (x1 = x, y1 = y, 1/0) : (x2 = x1, x1 = x, y2 = y1, y1 = y, (y1-y2)/(x1-x2))
@@ -17,6 +19,17 @@ set style line 103 lw 1 lt rgb "#b8ee30"
 set style line 104 lw 3 lt rgb "#f7b32b" 
 set style line 105 lw 1 lt rgb "#f7b32b" 
 set style line 106 lw 2 lt rgb "#ff00ff" 
+
+
+
+set style line 110 lw 3 lt rgb "#ff0000" 
+set style line 111 lw 1 lt rgb "#ff0000" 
+set style line 120 lw 2 lt rgb "#ffa000" 
+set style line 121 lw 0.5 lt rgb "#ffa000" 
+set style line 130 lw 2 lt rgb "#ffff00" 
+set style line 131 lw 1 lt rgb "#ffff00" 
+set style line 140 lw 2 lt rgb "#00ff00" 
+set style line 141 lw 1 lt rgb "#00ff00" 
 
 #plot "out.csv" using 1:2 with lines ls 101 title "az", '' using 1:3 with lines ls 102 title "elev", '' using 1:4 with lines ls 103 title "dist" axis x1y2 
 #plot 'out.csv' using 1:3 with lines ls 102 title "elev", '' using 1:4 with lines ls 103 title "dist" axis x1y2, 0 ls 104
@@ -37,9 +50,34 @@ set style line 106 lw 2 lt rgb "#ff00ff"
 #'AO27.csv' using 1:3 with lines ls 106 title "AO27"
 
 
+#plot '25544_groundtruth.csv' using 1:3 with lines ls 102 title "groundtruth", \
+#0 ls 100, \
+#'25544_old.csv' using 1:3 with lines ls 105 title 'old',\
+#'25544_old.csv' using 1:3 with dots ls 104 title 'old',\
+#'25544_mmdev.csv' using 1:3 with dots ls 106 title 'dev',\
+#'25544_mmdev.csv' using 1:3 with lines ls 101 title 'dev'
+
+#plot '25544_groundtruth.csv' using 1:3 with lines ls 102 title "groundtruth", \
+#0 ls 100, \
+#'25544_simple.csv' using 1:3 with dots  ls 110 title 'simple',\
+#'25544_simple.csv' using 1:3 with lines ls 111 title 'simple',\
+#'25544_bisect.csv' using 1:3 with dots  ls 120 title 'bisect',\
+#'25544_bisect.csv' using 1:3 with lines ls 121 title 'bisect',\
+#'25544_bisect2.csv' using 1:3 with dots  ls 130 title 'bisect2',\
+#'25544_bisect2.csv' using 1:3 with lines ls 131 title 'bisect2',\
+#'25544_bisect3.csv' using 1:3 with dots  ls 140 title 'bisect3',\
+#'25544_bisect3.csv' using 1:3 with lines ls 141 title 'bisect3'
+
+
 plot '25544_groundtruth.csv' using 1:3 with lines ls 102 title "groundtruth", \
 0 ls 100, \
-'25544_old.csv' using 1:3 with lines ls 105 title 'old',\
-'25544_old.csv' using 1:3 with dots ls 104 title 'old',\
-'25544_mmdev.csv' using 1:3 with dots ls 106 title 'dev',\
-'25544_mmdev.csv' using 1:3 with lines ls 101 title 'dev'
+'25544_golf.csv' using 1:3 with dots  ls 110 title 'golf',\
+'25544_golf.csv' using 1:3 with lines ls 111 title 'golf',\
+'25544_np2.csv' using 1:3 with dots  ls 130 title 'np2',\
+'25544_np2.csv' using 1:3 with lines ls 131 title 'np2',\
+'25544_np3.csv' using 1:3 with dots  ls 140 title 'np3',\
+'25544_np3.csv' using 1:3 with lines ls 141 title 'np3',\
+'25544_nextpass.csv' using 1:3 with dots  ls 150 title 'nextpass',\
+'25544_nextpass.csv' using 1:3 with lines ls 151 title 'nextpass'
+#'25544_np1.csv' using 1:3 with dots  ls 120 title 'np1',\
+#'25544_np1.csv' using 1:3 with lines ls 121 title 'np1',\

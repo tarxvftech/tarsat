@@ -10,29 +10,33 @@
 #include <maidenhead.h>
 #include <watdefs.h>
 #include <afuncs.h>
+#include <assert.h>
 
+int _sat_algoN_write(int satid, char * algo, int n);
+int _sat_algoN_read(int satid, char * algo);
 
 
 double jd_to_j2k(double jd)
 {
     return jd - 2451545.0;
 }
-double wrap( double in, double max)
+double wrap(double in, double max)
 {
     //TODO replace with fmod i think
-    while( in < 0 ) {
+    while(in < 0) {
         in += max;
     }
-    while( in >= max ) {
+    while(in >= max) {
         in -= max;
     }
     return in;
 }
-double UT_dechrs_from_jd(double jd){
+double UT_dechrs_from_jd(double jd)
+{
     double UT = 24 * (jd - floor(jd) + .5);
     return UT;
 }
-double local_sidereal_degrees(double j2k, double longitude )
+double local_sidereal_degrees(double j2k, double longitude)
 {
     double UT = UT_dechrs_from_jd(j2k); //hours, naturally
     /*printf("J2K: %.6f \n", j2k);*/
@@ -43,43 +47,42 @@ double local_sidereal_degrees(double j2k, double longitude )
     local_sidereal_time = wrap(local_sidereal_time, 360);
     return local_sidereal_time;
 }
-double hour_angle_degrees( double lst_deg, double ra_hrs)
+double hour_angle_degrees(double lst_deg, double ra_hrs)
 {
     double ha = lst_deg - HRS2DEG(ra_hrs);
-    ha = wrap( ha, 360 );
+    ha = wrap(ha, 360);
     //note that hour angle is in range -PI,PI in liblunar...and we're 0,360
     return ha; //hour angle is in degrees
 }
-void ra_dec_to_alt_az( const double hr_ang, const double dec, double *alt, double *az, const double lat)
+void ra_dec_to_alt_az(const double hr_ang, const double dec, double* alt, double* az, const double lat)
 {
-   double temp, cos_lat = cos( lat);
+    double temp, cos_lat = cos(lat);
 
-   *alt = asine( sin( lat) * sin( dec) + cos_lat * cos( dec) * cos( hr_ang));
-   if( cos_lat < .00001)         /* polar case */
-      *az = hr_ang;
-   else
-      {
-      temp = (sin( dec) - sin( *alt) * sin( lat)) / (cos( *alt) * cos_lat);
-      temp = PI - acose( temp);
-      *az = ((sin( hr_ang) < 0.) ? temp : -temp);
-      }
+    *alt = asine(sin(lat) * sin(dec) + cos_lat * cos(dec) * cos(hr_ang));
+    if(cos_lat < .00001) {        /* polar case */
+        *az = hr_ang;
+    } else {
+        temp = (sin(dec) - sin(*alt) * sin(lat)) / (cos(*alt) * cos_lat);
+        temp = PI - acose(temp);
+        *az = ((sin(hr_ang) < 0.) ? temp : -temp);
+    }
 }
 void ra_dec_to_az_alt(double jd,
-                      double latitude, double longitude,
-                      double ra_hrs, double dec_deg,
-                      double * az_out_deg, double * alt_out_deg)
+        double latitude, double longitude,
+        double ra_hrs, double dec_deg,
+        double* az_out_deg, double* alt_out_deg)
 {
-    if( 1 ){
+    if(1) {
         double j2k = jd_to_j2k(jd);
         double lst = local_sidereal_degrees(j2k, longitude);
         /*printf("lst %.4f\n", lst);*/
-        double ha = RAD(hour_angle_degrees(lst, ra_hrs )); //radians
+        double ha = RAD(hour_angle_degrees(lst, ra_hrs));  //radians
         /*printf("HA mine = %f\n", DEG(ha));*/
 
         double latrad = RAD(latitude);
         double dec = RAD(dec_deg);
 
-        double alt = asin( sin(latrad) * sin(dec) + cos(latrad)*cos(dec)*cos(ha));
+        double alt = asin(sin(latrad) * sin(dec) + cos(latrad)*cos(dec)*cos(ha));
         double A = acos(
                 (sin(dec) - sin(alt)*sin(latrad))
                 /
@@ -111,15 +114,15 @@ void ra_dec_to_az_alt(double jd,
         //
         DPT radec = {RAD(HRS2DEG(ra_hrs)), RAD(dec_deg)};
         // from looking at precess.cpp, both expected to be in suitable form for sin,cos etc
-            //so needs to be radians
+        //so needs to be radians
         /*DPT latlon = {RAD(latitude), RAD(longitude)};*/
         DPT latlon = {RAD(longitude), RAD(latitude)}; //x,y; and x is _longitude_! BAD NAMING!
-        //BEWARE -- lunar library stores data in DPT
-        //BUT!
-        //DPT alt_az = {double x, y}
-        //and they consistently use it y, then x!
-        //which means when you use it, latlon is stored x=lon, y=lat
-        //alt_az is stored alt=y, az=x
+                                                      //BEWARE -- lunar library stores data in DPT
+                                                      //BUT!
+                                                      //DPT alt_az = {double x, y}
+                                                      //and they consistently use it y, then x!
+                                                      //which means when you use it, latlon is stored x=lon, y=lat
+                                                      //alt_az is stored alt=y, az=x
         DPT altaz = {0};
         //by convention, alt should be (-PI,PI), az should be (0,2*PI)
         //except there is some evidence in liblunar that az is likely to be (-PI,PI)
@@ -141,14 +144,14 @@ void ra_dec_to_az_alt(double jd,
 }
 
 extern char algo[];
-sat_pos_t  calcSat( tle_t * tle, double time_jd, topo_pos_t observer_degrees)
+sat_pos_t  calcSat(tle_t* tle, topo_pos_t observer_degrees, double time_jd)
 {
     topo_pos_t obs = { //observer position, but in radians
         RAD(observer_degrees.lat),
         RAD(observer_degrees.lon),
         observer_degrees.alt
     };
-    int is_deep = select_ephemeris( tle );
+    int is_deep = select_ephemeris(tle);
     int ephem = 1;       /* default to SGP4 */
     double sat_params[N_SAT_PARAMS], observer_loc[3];
     double rho_sin_phi;
@@ -164,47 +167,47 @@ sat_pos_t  calcSat( tle_t * tle, double time_jd, topo_pos_t observer_degrees)
     int err_val = 0;
 
     //remember to put lat and lon in rad by this point
-    earth_lat_alt_to_parallax( obs.lat, obs.alt, &rho_cos_phi, &rho_sin_phi);
-    observer_cartesian_coords( time_jd, obs.lon, rho_cos_phi, rho_sin_phi, observer_loc);
-    if( is_deep && (ephem == 1 || ephem == 2)) {
+    earth_lat_alt_to_parallax(obs.lat, obs.alt, &rho_cos_phi, &rho_sin_phi);
+    observer_cartesian_coords(time_jd, obs.lon, rho_cos_phi, rho_sin_phi, observer_loc);
+    if(is_deep && (ephem == 1 || ephem == 2)) {
         ephem += 2;
     }
-    if( !is_deep && (ephem == 3 || ephem == 4)) {
+    if(!is_deep && (ephem == 3 || ephem == 4)) {
         ephem -= 2;
     }
 
     t_since = (time_jd - tle->epoch) * 1440;
-    switch( ephem) {
-    case 0:
-        SGP_init( sat_params, tle);
-        err_val = SGP( t_since, tle, sat_params, pos, NULL);
-        break;
-    case 1:
-        SGP4_init( sat_params, tle);
-        err_val = SGP4( t_since, tle, sat_params, pos, NULL);
-        break;
-    case 2:
-        SGP8_init( sat_params, tle);
-        err_val = SGP8( t_since, tle, sat_params, pos, NULL);
-        break;
-    case 3:
-        SDP4_init( sat_params, tle);
-        err_val = SDP4( t_since, tle, sat_params, pos, NULL);
-        break;
-    case 4:
-        SDP8_init( sat_params, tle);
-        err_val = SDP8( t_since, tle, sat_params, pos, NULL);
-        break;
-    default:
-        //printf( "? How did we get here? ephem = %d\n", ephem);
-        err_val = 0;
-        break;
+    switch(ephem) {
+        case 0:
+            SGP_init(sat_params, tle);
+            err_val = SGP(t_since, tle, sat_params, pos, NULL);
+            break;
+        case 1:
+            SGP4_init(sat_params, tle);
+            err_val = SGP4(t_since, tle, sat_params, pos, NULL);
+            break;
+        case 2:
+            SGP8_init(sat_params, tle);
+            err_val = SGP8(t_since, tle, sat_params, pos, NULL);
+            break;
+        case 3:
+            SDP4_init(sat_params, tle);
+            err_val = SDP4(t_since, tle, sat_params, pos, NULL);
+            break;
+        case 4:
+            SDP8_init(sat_params, tle);
+            err_val = SDP8(t_since, tle, sat_params, pos, NULL);
+            break;
+        default:
+            //printf( "? How did we get here? ephem = %d\n", ephem);
+            err_val = 0;
+            break;
     }
-    if( err_val ) {
+    if(err_val) {
         /*printf( "Ephemeris error %d\n", err_val);*/
     }
-    get_satellite_ra_dec_delta( observer_loc, pos, &ra, &dec, &dist_to_satellite);
-    epoch_of_date_to_j2000( time_jd, &ra, &dec);
+    get_satellite_ra_dec_delta(observer_loc, pos, &ra, &dec, &dist_to_satellite);
+    epoch_of_date_to_j2000(time_jd, &ra, &dec);
     double az = 0;
     double elev = 0;
     ra_dec_to_az_alt(time_jd, DEG(obs.lat), DEG(obs.lon), DEG(ra)/15, DEG(dec), &az, &elev);
@@ -219,195 +222,446 @@ sat_pos_t  calcSat( tle_t * tle, double time_jd, topo_pos_t observer_degrees)
     ret.jd = time_jd;
     ret.satid = tle->norad_number;
     ret.err = err_val;
+
+
     char fn[64] = {0};
     snprintf(fn, 64, "%d_%s.csv", ret.satid, algo);
-    FILE * fd = fopen(fn, "a");
+    FILE* fd = fopen(fn, "a");
     fprintf(fd,"%f,%f,%f,%f,%f,%f\n", time_jd, ret.az, ret.elev, ret.dist, ret.ra, ret.dec);
     fclose(fd);
-    snprintf(fn, 64, "%d_%s_N.csv", ret.satid, algo);
 
-    fd = fopen(fn, "r");
-    int n = 0;
-    if( fd ){
-       fscanf(fd, "%d", &n);
-       fclose(fd);
-    } 
-
-    fd = fopen(fn, "w");
+    int n = _sat_algoN_read(ret.satid, algo);
     n += 1;
-    if( fd ){
-       fprintf(fd, "%d\n", n);
-    } 
-    fclose(fd);
+    _sat_algoN_write(ret.satid, algo, n);
+
     return ret;
 }
 
+int _sat_algoN_write(int satid, char * algo, int n){
+    char fn[64] = {0};
+    snprintf(fn, 64, "%d_%s_N.csv", satid, algo);
+    FILE * fd = fopen(fn, "w");
+    if(fd) {
+        fprintf(fd, "%d\n", n);
+    }
+    fclose(fd);
+}
+int _sat_algoN_read(int satid, char * algo){
+    char fn[64] = {0};
+    snprintf(fn, 64, "%d_%s_N.csv", satid, algo);
+    FILE * fd = fopen(fn, "r");
+    int n = 0;
+    if(fd) {
+        fscanf(fd, "%d", &n);
+        fclose(fd);
+    }
+    return n;
+}
 
 
+foundfeature_t search_hillclimb(
+        topo_pos_t obs,
+        tle_t* tle,
 
-sat_pos_t bisectSearchJD(
-        double startjd,
-        double endjd,
-        tle_t * tle,
-        topo_pos_t observer,
-        enum SearchType searchtype
+        jd_ts stepsize,
+        jd_ts startjd,
+        jd_ts maxjd
         ){
+    ;
+}
+foundfeature_t search_simple(
+        topo_pos_t obs,
+        tle_t* tle,
+        search_t searchtype,
+        direction_t dir,
+
+        jd_ts stepsize,
+        jd_ts startjd,
+        jd_ts maxjd
+        )
+{
+    foundfeature_t found = {0};
+    double jd = startjd;
+    sat_pos_t m1 = calcSat(tle, obs, jd);
+    double lastslope = 0;
+    do {
+        sat_pos_t m2 = calcSat(tle, obs, jd);
+        double elevslope = m2.elev - m1.elev;
+        if( searchtype & SEARCH_MIN ){
+            if(lastslope < 0 && elevslope > 0) {
+                found.pos = m1;
+                found.feature = SEARCH_MIN;
+                return found;
+            } 
+        }
+        if( searchtype & SEARCH_PASSMAX){
+            if(lastslope > 0 && elevslope < 0 && m2.elev > 0) {
+                found.pos = m1;
+                found.feature = SEARCH_PASSMAX | SEARCH_MAX;
+                return found;
+            }
+        }
+        if( searchtype & SEARCH_MAX){
+            if(lastslope > 0 && elevslope < 0) {
+                found.pos = m1;
+                found.feature = SEARCH_MAX;
+                return found;
+            }
+        }
+        m1 = m2;
+        lastslope = elevslope;
+        if(dir == LEFT) {
+            jd-=stepsize;
+        } else {
+            jd+=stepsize;
+        }
+    } while(jd < maxjd);
+    found.pos = m1;
+    found.feature = SEARCH_FAILURE;
+    return found;
+}
+
+uint32_t lutkey(search_t st, int slope, int elev){
+    return ( 
+            ((st&15)<<2) 
+            | 
+            ((slope&1) << 1) 
+            |
+            ((elev&1) << 0) 
+           ) ;
+}
+uint32_t lutval(int st, int slope, int elev, int dir){
+    return (dir << 
+            lutkey(st,slope,elev)
+           );
+}
+uint32_t makelut(){
+    uint32_t lut = 0;
+#define NEG (0)
+#define POS (1)
+
+    lut |= lutval(SEARCH_RISING, NEG, NEG, LEFT);
+    lut |= lutval(SEARCH_RISING, NEG, POS, LEFT);
+    lut |= lutval(SEARCH_RISING, POS, NEG, RIGHT);
+    lut |= lutval(SEARCH_RISING, POS, POS, LEFT);
+
+    lut |= lutval(SEARCH_FALLING, NEG, NEG, LEFT);
+    lut |= lutval(SEARCH_FALLING, NEG, POS, RIGHT);
+    lut |= lutval(SEARCH_FALLING, POS, NEG, RIGHT);
+    lut |= lutval(SEARCH_FALLING, POS, POS, RIGHT);
+
+    lut |= lutval(SEARCH_MAX, NEG, NEG, LEFT);
+    lut |= lutval(SEARCH_MAX, NEG, POS, LEFT);
+    lut |= lutval(SEARCH_MAX, POS, NEG, RIGHT);
+    lut |= lutval(SEARCH_MAX, POS, POS, RIGHT);
+
+    lut |= lutval(SEARCH_MIN, NEG, NEG, RIGHT);
+    lut |= lutval(SEARCH_MIN, NEG, POS, RIGHT);
+    lut |= lutval(SEARCH_MIN, POS, NEG, LEFT);
+    lut |= lutval(SEARCH_MIN, POS, POS, LEFT); 
+
+    printf("LUT: 0x%x\n", lut);
+    return lut;
+}
+
+foundfeature_t bisectSearchJD(
+        topo_pos_t observer,
+        tle_t* tle,
+        search_t searchtype,
+        jd_ts precision,
+
+        double startjd,
+        double maxjd
+        )
+{
 
     double jd_1s = 1.0 / 86400; //1 second in decimal days
-    double precision = 1*jd_1s;
 
-    double width = endjd-startjd; 
-    //endjd must be beyond startjd
-    if( width < 0 ){
+    double width = maxjd-startjd;
+    //maxjd must be beyond startjd
+    if(width < 0) {
         //TODO error! out of order.
-        sat_pos_t x;
-        x.err = -1;
+        foundfeature_t x;
+        x.feature = SEARCH_FAILURE;
+        x.pos.err = -1;
         return x;
     }
+    foundfeature_t ret;
 
-    double midpoint = startjd + width/2;
-    if( width <= precision ){
-        //if we're at the feature - and we should be able to sanity check that, then 
-        sat_pos_t l = calcSat( tle, midpoint-5*jd_1s, observer);
-        sat_pos_t m = calcSat( tle, midpoint, observer);
-        sat_pos_t r = calcSat( tle, midpoint+5*jd_1s, observer);
-        switch(searchtype){
-           case SEARCH_RISING:
-              break;
-           case SEARCH_FALLING:
-              break;
-           case SEARCH_MAX:
-              break;
-           case SEARCH_MIN:
-              break;
-           default:
-              //unhandled;
-              break;
-
+    double halfwidth = width / 2;
+    double midpoint = startjd + halfwidth;
+    if(width <= precision) {
+        sat_pos_t m = calcSat(tle, observer, midpoint);
+        if ( (searchtype & SEARCH_MAX ) || (searchtype & SEARCH_MIN ) ){
+            //trust that the bisection algorithm worked appropriately, assuming we have a min or max as appropriate within our search range and return
+            ret.pos = m;
+            return ret;
         }
-        //printf("Returning with %s at elev %.1f\n", m.err == 0? "SUCCESS":"FAILURE", m.elev);
-        return m;
+        sat_pos_t l = calcSat(tle, observer, startjd);
+        sat_pos_t r = calcSat(tle, observer, startjd+width);
+        //rising, falling, and passmaxes require interaction with the horizon (elev = 0).
+        //so we need to sanity check, as our parent/caller may need to continue searching
+        if( (searchtype & SEARCH_RISING ) &&
+                l.elev < m.elev && m.elev < r.elev && l.elev <= 0 && r.elev >= 0) {
+            ret.pos = l;
+            return ret;
+        } 
+        if ( (searchtype & SEARCH_FALLING ) &&
+                l.elev > r.elev && l.elev >= 0 && r.elev <= 0) {
+            ret.pos = l;
+            return ret;
+        } 
+        if ( (searchtype & SEARCH_PASSMAX ) &&
+                l.elev <= m.elev && m.elev >= r.elev && m.elev > 0) {
+            ret.pos = m;
+            return ret;
+        } 
+        printf("NOT FOUND\n");
+        l.err = 1;
+        ret.pos = l;
+        return ret;
     } else {
-        sat_pos_t m1 = calcSat( tle, midpoint, observer);
-        sat_pos_t m2 = calcSat( tle, midpoint+1*jd_1s, observer); //pop right a little so we can measure the change in elevation
+        sat_pos_t m1 = calcSat(tle, observer, midpoint);
+        sat_pos_t m2 = calcSat(tle, observer, midpoint+1*jd_1s);  //pop right a little so we can measure the change in elevation
         double mslope_elev = m2.elev - m1.elev; //positive mslope_elev represents increasing values left-to-right
         char elevation = m1.elev >= 0?1:0; //positive is truthy
         char slope = mslope_elev >= 0?1:0; //negative is falsy
-        char key = (searchtype&3) << 2 | (elevation&1) << 1 | (slope&1) << 0;
-        uint16_t lut = 0xae2; //direction lookup table
+        uint32_t key = lutkey(searchtype, slope, elevation);
+        uint32_t lut = 0xe0f7b; //direction lookup table, generated by makelut
+                              
         bool goRight = (lut >> key) & 1;
-        //printf("\tkey: 0x%x goRight: %d\n", key, goRight);
-        
-        if( goRight ){
-            return bisectSearchJD(midpoint, endjd, tle, observer, searchtype);
-        } else { 
-            return bisectSearchJD(startjd, midpoint, tle, observer, searchtype);
+        /*printf("\tkey: 0x%x goRight: %d\n", key, goRight);*/
+
+        if(goRight) {
+            return bisectSearchJD(
+                    observer, 
+                    tle, 
+                    searchtype,
+                    precision, 
+                    midpoint, 
+                    maxjd
+                    );
+        } else {
+            return bisectSearchJD(
+                    observer, 
+                    tle, 
+                    searchtype,
+                    precision, 
+                    startjd, 
+                    midpoint 
+                    );
         }
     }
 }
 
+sat_pass_t nextpass(
+        topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
+        tle_t* tle,  //sat in question
+        jd_ts startjd //start time
+        ){
+    sat_pass_t pass = {0};
+    /*pass.rise = get_orbit_local_feature( obs, tle, SEARCH_RISING,  RIGHT, startjd);*/
+    /*pass.max  = get_orbit_local_feature( obs, tle, SEARCH_PASSMAX, RIGHT, pass.rise.jd);*/
+    /*pass.set  = get_orbit_local_feature( obs, tle, SEARCH_FALLING, RIGHT, pass.max.jd);*/
+    return pass;
+}
+
+
+sat_pos_t np1(
+        topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
+        tle_t* tle,  //sat in question
+        search_t featuretype, // SEARCH_RISING etc
+        direction_t dir, //search direction
+
+        jd_ts startjd //start time
+        )
+{
+    //naive search till victory. 
+    jd_ts stepsize = 30.0/86400;
+    jd_ts maxjd = startjd + 1;
+    foundfeature_t found = search_simple(
+            obs, 
+            tle,
+            featuretype,
+            dir,
+            stepsize,
+            startjd, 
+            maxjd
+            );
+    return found.pos;
+}
+
+sat_pos_t np2(
+        topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
+        tle_t* tle,  //sat in question
+        search_t featuretype, // SEARCH_RISING etc
+        direction_t dir, //search direction
+
+        jd_ts startjd //start time
+        )
+{
+    //simple_search to the last min or max, then jump ahead and hillclimb to maxes until we find a pass
+    jd_ts stepsize = 300.0/86400;
+    jd_ts maxjd = startjd + 1;
+    double mean_motion_rpd = tle->xno * MINS_PER_DAY / (2*PI);
+    jd_ts one_orbit_jd = 1/mean_motion_rpd;
+    foundfeature_t found = search_simple(
+            obs, 
+            tle,
+            SEARCH_MIN|SEARCH_MAX,
+            LEFT,
+            stepsize,
+            startjd, 
+            maxjd
+            );
+    jd_ts nextjd = 0;
+    if( found.feature & SEARCH_MIN ){
+        //jump half an orbit 
+        nextjd = found.pos.jd + one_orbit_jd/2;
+    } else if( found.feature & SEARCH_MAX ){
+        //jump 1 orbit 
+        nextjd = found.pos.jd + one_orbit_jd;
+    }
+    stepsize = 30.0/86400;
+    //subtract a bit so we don't miss it
+    nextjd -= 2*stepsize;
+    //nextjd should be just before a max, now
+    if( featuretype == SEARCH_PASSMAX ){
+        while( 1 ){
+            found = search_simple(
+                    obs, 
+                    tle,
+                    SEARCH_MIN|SEARCH_MAX|SEARCH_PASSMAX,
+                    RIGHT,
+                    stepsize,
+                    nextjd, 
+                    nextjd + one_orbit_jd
+                    );
+            nextjd = found.pos.jd + one_orbit_jd;
+            stepsize = 30.0/86400;
+            nextjd -= 3*stepsize;
+            if( found.feature & featuretype ){
+                return found.pos;
+            }
+            if( found.feature & SEARCH_MIN ){
+                nextjd += one_orbit_jd/2 - 300.0/86400;
+            }
+            if( found.feature & SEARCH_MAX && found.pos.elev < -20){
+                //don't keep this
+                nextjd += 3*one_orbit_jd;
+            }
+        }
+    } else {
+        found = search_simple(
+                obs, 
+                tle,
+                featuretype,
+                RIGHT,
+                stepsize,
+                nextjd, 
+                nextjd + one_orbit_jd
+                );
+        return found.pos;
+    }
+}
+sat_pos_t np3(
+        topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
+        tle_t* tle,  //sat in question
+        search_t featuretype, // SEARCH_RISING etc
+        direction_t dir, //search direction
+
+        jd_ts startjd //start time
+        )
+{
+    //bisect to a max, then jump ahead and bisect to a max
+}
 sat_pos_t get_orbit_local_feature(
-    //observer location, in degrees latitude and longitude, and altitude in meters
-    topo_pos_t observer,
-    //sat in question
-    tle_t * tle,
-    //start time
-    jd_ts startjd,
-    //search direction
-    direction_t dir
-    ){
-   //find the next local feature - 
+        topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
+        tle_t* tle,  //sat in question
+        search_t featuretype, // SEARCH_RISING etc
+        direction_t dir, //search direction
+
+        jd_ts startjd //start time
+        )
+{
+    if( ! (featuretype & (SEARCH_RISING|SEARCH_FALLING|SEARCH_MAX|SEARCH_MIN) ) ){
+        sat_pos_t m;
+        m.err = 1;
+        return m;
+    }
+    jd_ts days = 1;
+    jd_ts stepsize = 300.0/86400;
+    jd_ts bisect_precision = 1.0/86400;
+
+    bool found_maxes = false;
+
+    jd_ts maxjd = startjd + days;
+
+    double mean_motion_rpd = tle->xno * MINS_PER_DAY / (2*PI);
+    jd_ts one_orbit_jd = 1/mean_motion_rpd;
+
+    foundfeature_t found = search_simple(
+            obs, 
+            tle,
+            SEARCH_MIN | SEARCH_MAX | SEARCH_PASSMAX,
+            RIGHT,
+            stepsize,
+            startjd, 
+            maxjd
+            );
+    /*return found.pos;*/
+
+    jd_ts next_startjd = 0;
+    if( found.feature & SEARCH_PASSMAX ){
+        next_startjd = found.pos.jd - one_orbit_jd/2;
+    } else if( found.feature & SEARCH_MAX ){
+        next_startjd = found.pos.jd + one_orbit_jd/2;
+    } else if( found.feature & SEARCH_MIN ){
+        next_startjd = found.pos.jd; 
+    } else {
+        ;//...
+    }
+    jd_ts next_maxjd = startjd + one_orbit_jd;
+    found = bisectSearchJD(
+            obs,
+            tle,
+            SEARCH_PASSMAX | SEARCH_MAX,
+            bisect_precision,
+            next_startjd,
+            next_maxjd
+            );
+    return found.pos;
+}
+errorcount get_next_N_passes(tle_t tle, topo_pos_t obs, jd_ts startjd, int N, sat_pass_t * passes, nextpassfn np){
+    //find and store the next N passes in the sat_pass_t array passes.
+    
+    //This is meant to be used for writing automated and semi-automated
+    //tests and test cases as a way of sanity checking more efficient
+    //algorithms.
+
+    jd_ts nextjd = startjd;
+    sat_pass_t pass = {0};
+    double mean_motion_rpd = tle.xno * MINS_PER_DAY / (2*PI);
+    jd_ts one_orbit_jd = 1/mean_motion_rpd;
+    jd_ts post_pass_offset = .05*one_orbit_jd; //how long after a pass before looking for the next pass
+        //.05 is just to get it past the pass a bit, 
+        //and 5% of an orbit period seems like it would be 
+        //more consistant across satellites 
+        //than some constant in seconds
+    int errors = 0;
+    for( int i = 0; i < N; i++ ){
+        pass = np(tle,obs,nextjd);
+        errors += pass.err; //yes, it will log the error but just continue trying anyway. 
+                            //I have not defined the errors very well so it's more useful for now to collect them all, if any, 
+                            //and I can look at them in gdb when they happen
+        passes[i] = pass;
+        nextjd = pass.set.jd + post_pass_offset; //actually, won't this fail all future passes if the pass isn't correctly calculated, 
+                                                 //since the pass won't be fully filled out?
+        assert( pass.set.jd != 0 ); //let's find out
+    }
+    return errors;
 }
 
 
 
-void init_sat_global(){
-    //Hardcoded TLEs must be updated at compile time
-    //This also implies updating TLEs requires a firmware update.
-    //This is a temporary measure until nvm is ready.
-//#include "generated/sat_tles.c"
-    satellites_initialized = 0; //only init_sat_global is allowed to increment from -1 to 0
 
-}
-sat_mem_t satellites[10] = {0};
-int num_satellites = 0;
-int satellites_initialized = -1;
-const star_t stars[] = {
-// { name, right ascension, declination, magnitude }
-    {"Polaris",         2+32/60,  89.3,  1.99},
-    {"Sirius",          6+45/40, -16.7, -1.46},
-    {"Canopus",         6+24/40, -52.7, -0.73},
-    {"A. Centauri",    14+40/40, -60.8, -0.29},
-    {"Arcturus",       14+16/40,  19.2, -0.05},
-    {"Vega",           18+37/40,  38.8,  0.03},
-    {"Capella",         5+17/40,  46.0,  0.07},
-    {"Rigel",           5+15/40,  -8.2,  0.15},
-    {"Procyon",         7+39/40,   5.2,  0.36},
-    {"Achernar",        1+38/40, -57.2,  0.45},
-    {"Betelgeuse",      5+55/40,   7.4,  0.55},
-    {"Hadar",          14+ 4/40, -60.4,  0.61},
-    {"Altair",         19+51/40,   8.9,  0.77},
-    {"Acrux",          12+27/40, -63.1,  0.79},
-    {"Aldebaran",       4+36/40,  16.5,  0.86},
-    {"Antares",        16+29/40, -26.4,  0.95},
-    {"Spica",          13+25/40, -11.2,  0.97},
-    {"Pollux",          7+45/40,  28.0,  1.14},
-    {"Fomalhaut",      22+58/40, -29.6,  1.15},
-    {"Deneb",          20+41/40,  45.3,  1.24},
-    {"Mimosa",         12+48/40, -59.7,  1.26},
-    {"Regulus",        10+ 8/40,  12.0,  1.36},
-    {"Adhara",          6+59/40, -29.0,  1.50},
-    {"Castor",          7+35/40,  31.9,  1.58},
-    {"Shaula",         17+34/40, -37.1,  1.62},
-    {"Gacrux",         12+31/40, -57.1,  1.63},
-    {"Bellatrix",       5+25/60,   6.3,  1.64},
-    {"Elnath",          5+26/60,  28.6,  1.66},
-    {"Miaplacidus",     9+13/60, -69.7,  1.67},
-    {"Alnilam",         5+36/60,  -1.2,  1.69},
-    {"Alnair",         22+ 8/60, -47.0,  1.74},
-    {"Alnitak",         5+41/60,  -1.9,  1.75},
-    {"Alioth",         12+54/60,  56.0,  1.77},
-    {"Mirfak",          3+24/60,  49.9,  1.80},
-    {"Dubhe",          11+ 4/60,  61.8,  1.80},
-    {"Regor",           8+10/60, -47.3,  1.81},
-    {"Wezen",           7+ 8/60, -26.4,  1.83},
-    {"Kaus Australis", 18+24/60, -34.4,  1.84},
-    {"Alkaid",         13+48/60,  49.3,  1.86},
-    {"Sargas",         17+37/60, -43.0,  1.86},
-    {"Avior",           8+23/60, -59.5,  1.87},
-    {"Menkalinan",      6+ 0/60,  44.9,  1.90},
-    {"Atria",          16+49/60, -69.0,  1.92},
-    {"Alhena",          6+38/60,  16.4,  1.93},
-    {"Peacock",        20+26/60, -56.7,  1.93},
-    {"Koo She",         8+45/60, -54.7,  1.95},
-    {"Mirzam",          6+23/60, -18.0,  1.98},
-    {"Alphard",         9+28/60,  -8.7,  1.98},
-    {"Polaris",         2+32/60,  89.3,  1.99},
-    {"Algieba",        10+20/60,  19.8,  2.00},
-    {"Hamal",           2+ 7/60,  23.5,  2.01},
-    {"Diphda",          0+44/60, -18.0,  2.04},
-    {"Nunki",          18+55/60, -26.3,  2.05},
-    {"Menkent",        14+ 7/60, -36.4,  2.06},
-    {"Alpheratz",       0+ 8/60,  29.1,  2.07},
-    {"Mirach",          1+10/60,  35.6,  2.07},
-    {"Saiph",           5+48/60,  -9.7,  2.07},
-    {"Kochab",         14+51/60,  74.2,  2.07},
-    {"Al Dhanab",      22+43/60, -46.9,  2.07},
-    {"Rasalhague",     17+35/60,  12.6,  2.08},
-    {"Algol",           3+ 8/60,  41.0,  2.09},
-    {"Almach",          2+ 4/60,  42.3,  2.10},
-    {"Denebola",       11+49/60,  14.6,  2.14},
-    {"Cih",             0+57/60,  60.7,  2.15},
-    {"Muhlifain",      12+42/60, -49.0,  2.20},
-    {"Naos",            8+ 4/60, -40.0,  2.21},
-    {"Aspidiske",       9+17/60, -59.3,  2.21},
-    {"Alphecca",       15+35/60,  26.7,  2.22},
-    {"Suhail",          9+ 8/60, -43.4,  2.23},
-    {"Mizar",          13+24/60,  54.9,  2.23},
-    {"Sadr",           20+22/60,  40.3,  2.23},
-//#include "data/stars/stars.table" //~3150 more stars
-//(not individually named, constellation abbreviations for the names)
-//ahahaha yeah no, uses way too much space
-//and WAY too long to draw, damn!
-};
-int num_stars = sizeof( stars ) / sizeof( star_t );
