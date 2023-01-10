@@ -1,54 +1,32 @@
 
 #include <assert.h>
 #include <string.h>
+#include <math.h>
 #include "satellite.h"
 #include "linux.h"
 #include "sattests.h"
 
 int _sat_algoN_read(int satid, char * algo);
-void test_1(){
-    jd_ts startjd = 2459943.332685; //NOT FOUND
-    Pf(startjd);
-    tle_t tle1 = {0};
-    tle_t tle2 = {0};
-    int r = loadtle("data/tles/historical/22321.txt",25544, &tle1); //ISS
-    assert( r == 1 );
-    r = loadtle("data/tles/historical/22363.txt",25544, &tle2); //ISS
-    assert( r == 1 );
-    topo_pos_t obs = {0};
-    /*sat_pass_t pass1 = nextpass(obs, &tle1, startjd);*/
-    /*sat_pass_t pass2 = nextpass(obs, &tle2, startjd);*/
-
-    //https://stackoverflow.com/questions/1275484/good-plotting-library-for-c
-    //https://stackoverflow.com/questions/63987163/how-do-you-draw-a-circle-using-gnuplot
-    /*plot_pass(obs,&tle1,pass1);*/
-    /*plot_pass(obs,&tle2,pass2);*/
-    double frequency = 10e9;
-    /*points1 = doppler_curve(pass1, frequency, 1000);*/
-    //should use doppler_point somewhere in there? I guess?
-    //doppler_curve should be unscaled by frequency
-    /*points2 = doppler_curve(pass2, 1000);*/
-}
-void test_2(){
-    jd_ts startjd = 2459943.332685;
-    tle_t tle1 = {0};
-    tle_t tle2 = {0};
-    int r = loadtle("data/tles/historical/22321.txt",25544, &tle1); //ISS
-    if( r != 1 ){ return; } //TODO ERROR
-    r = loadtle("data/tles/historical/22363.txt",25544, &tle2); //ISS
-    if( r != 1 ){ return; } //TODO ERROR
-    topo_pos_t obs = {0};
-    /*plot_ra_dec_alt();*/
-    //3d plot in ECI xyz?
-    //plot just the TLE data changing over time! That ought to be interesting enough
-    //Plot the slope of the elevation curve too and see if there are any hints there
-    //on how to do it faster
-}
-void test_3(){
-}
 
 
+bool closeenough_jd( jd_ts a, jd_ts b, jd_ts eps){
+    return fabs(b-a) <= eps;
+}
+bool closeenough_deg( float a, float b, float eps){
+    return fabsf(b-a) <= eps;
+}
 soe passes_equalish( sat_pass_t p1, sat_pass_t p2, jd_ts precision_time, double precision_degrees){
+    int correct = 0;
+    correct += closeenough_jd(  p1.rise.jd,  p2.rise.jd, precision_time);
+    correct += closeenough_deg( p1.rise.az,  p2.rise.az, precision_degrees);
+
+    correct += closeenough_jd(  p1.max.jd,   p2.max.jd,  precision_time);
+    correct += closeenough_deg( p1.max.az,   p2.max.az, precision_degrees);
+    correct += closeenough_deg( p1.max.elev, p2.max.elev, precision_degrees);
+
+    correct += closeenough_jd(  p1.set.jd,   p2.set.jd, precision_time );
+    correct += closeenough_deg( p1.set.az,   p2.set.az, precision_degrees);
+    return 7-correct; //7 checks, where correct was incremented by 1 for each success, leaves the number of errors
 }
 errorcount compare_N_passes_between(tle_t tle, topo_pos_t obs, jd_ts jd, int N,
         nextpassfn np1, char * np1name,
@@ -88,4 +66,44 @@ errorcount compare_N_passes_between(tle_t tle, topo_pos_t obs, jd_ts jd, int N,
         //or write a report with graphs out, would be nicer
     }
     return errors;
+}
+void test_1(){
+    jd_ts startjd = 2459943.332685; //had some issues here with an old algo at this time so this timestamp lives on in this test
+    Pf(startjd);
+    tle_t tle1 = {0};
+    tle_t tle2 = {0};
+    int r = loadtle("data/tles/historical/22321.txt",25544, &tle1); //ISS
+    assert( r == 1 );
+    r = loadtle("data/tles/historical/22363.txt",25544, &tle2); //ISS
+    assert( r == 1 );
+    topo_pos_t obs = {0};
+    /*sat_pass_t pass1 = nextpass(obs, &tle1, startjd);*/
+    /*sat_pass_t pass2 = nextpass(obs, &tle2, startjd);*/
+
+    //https://stackoverflow.com/questions/1275484/good-plotting-library-for-c
+    //https://stackoverflow.com/questions/63987163/how-do-you-draw-a-circle-using-gnuplot
+    /*plot_pass(obs,&tle1,pass1);*/
+    /*plot_pass(obs,&tle2,pass2);*/
+    double frequency = 10e9;
+    /*points1 = doppler_curve(pass1, frequency, 1000);*/
+    //should use doppler_point somewhere in there? I guess?
+    //doppler_curve should be unscaled by frequency
+    /*points2 = doppler_curve(pass2, 1000);*/
+}
+void test_2(){
+    jd_ts startjd = 2459943.332685;
+    tle_t tle1 = {0};
+    tle_t tle2 = {0};
+    int r = loadtle("data/tles/historical/22321.txt",25544, &tle1); //ISS
+    if( r != 1 ){ return; } //TODO ERROR
+    r = loadtle("data/tles/historical/22363.txt",25544, &tle2); //ISS
+    if( r != 1 ){ return; } //TODO ERROR
+    topo_pos_t obs = {0};
+    /*plot_ra_dec_alt();*/
+    //3d plot in ECI xyz?
+    //plot just the TLE data changing over time! That ought to be interesting enough
+    //Plot the slope of the elevation curve too and see if there are any hints there
+    //on how to do it faster
+}
+void test_3(){
 }

@@ -529,7 +529,7 @@ sat_pos_t search_simple_better(
         return found.pos;
     }
 }
-sat_pos_t np3(
+sat_pos_t nextpass_bisect_only(
         tle_t* tle,  //sat in question
         topo_pos_t obs, //observer location, in degrees latitude and longitude, and altitude in meters
         search_t featuretype, // SEARCH_RISING etc
